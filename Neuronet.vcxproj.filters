@@ -24,12 +24,18 @@
     <ClCompile Include="cvector.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="cneuronet.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cmatrix.h">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="cvector.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cneuronet.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

@@ -75,11 +75,13 @@
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClCompile Include="cmatrix.cpp" />
+    <ClCompile Include="cneuronet.cpp" />
     <ClCompile Include="cvector.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cmatrix.h" />
+    <ClInclude Include="cneuronet.h" />
     <ClInclude Include="cvector.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
