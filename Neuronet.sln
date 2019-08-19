@@ -1,0 +1,20 @@
+﻿
+Microsoft Visual Studio Solution File, Format Version 11.00
+# Visual Studio 2010
+Project("{8BC9CEB8-8B4A-11D0-8D11-00A0C91BC942}") = "Neuronet", "Neuronet.vcxproj", "{8B902CAC-3CDD-4CBA-BEE6-C73680A0DBEA}"
+EndProject
+Global
+	GlobalSection(SolutionConfigurationPlatforms) = preSolution
+		Debug|Win32 = Debug|Win32
+		Release|Win32 = Release|Win32
+	EndGlobalSection
+	GlobalSection(ProjectConfigurationPlatforms) = postSolution
+		{8B902CAC-3CDD-4CBA-BEE6-C73680A0DBEA}.Debug|Win32.ActiveCfg = Debug|Win32
+		{8B902CAC-3CDD-4CBA-BEE6-C73680A0DBEA}.Debug|Win32.Build.0 = Debug|Win32
+		{8B902CAC-3CDD-4CBA-BEE6-C73680A0DBEA}.Release|Win32.ActiveCfg = Release|Win32
+		{8B902CAC-3CDD-4CBA-BEE6-C73680A0DBEA}.Release|Win32.Build.0 = Release|Win32
+	EndGlobalSection
+	GlobalSection(SolutionProperties) = preSolution
+		HideSolutionNode = FALSE
+	EndGlobalSection
+EndGlobal
