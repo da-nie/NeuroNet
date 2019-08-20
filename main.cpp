@@ -4,24 +4,7 @@
 #include "cneuronet.h"
 
 /*
-double GetRandValue(double max_value)
-{
- return((static_cast<double>(rand())*max_value)/static_cast<double>(RAND_MAX));
-}
- 
-double NeuronFunction(double value)
-{
- return(1.0/(1.0+exp(-value)));
-}
- 
-double NeuronFunctionDifferencial(double value)
-{
- return((1.0-NeuronFunction(value))*NeuronFunction(value));
-}
- 
- 
 // https://proglib.io/p/neural-nets-guide/
- 
 */
 
 //----------------------------------------------------------------------------------------------------
