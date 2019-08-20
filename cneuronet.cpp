@@ -2,6 +2,7 @@
 //подключаемые библиотеки
 //****************************************************************************************************
 #include "cneuronet.h"
+#include <fstream>
 
 //****************************************************************************************************
 //глобальные переменные
@@ -228,4 +229,319 @@ void CNeuroNet::GetAnswer(const CVector &input,CVector &output)
   }
  }
  output=cVector_H[layers-1];
+}
+//----------------------------------------------------------------------------------------------------
+//экспортировать нейросеть
+//----------------------------------------------------------------------------------------------------
+bool CNeuroNet::Export(const std::string &file_name)
+{
+ size_t layers=NeuronInLayers.size();
+ if (layers<2) return(false);
+
+ /*
+ FILE *file=fopen(file_name.c_str(),"wb");
+ 
+ fprintf(file,"//****************************************************************************************************"<<std::endl);
+ fprintf(file,"//подключаемые библиотеки"<<std::endl);
+ fprintf(file,"//****************************************************************************************************"<<std::endl);
+ fprintf(file,"#include <stdio.h>"<<std::endl);
+ fprintf(file,"#include <math.h>"<<std::endl);
+ fprintf(file,""<<std::endl);
+
+ fprintf(file,"//****************************************************************************************************"<<std::endl);
+ fprintf(file,"//константы"<<std::endl);
+ fprintf(file,"//****************************************************************************************************"<<std::endl);
+
+ for(size_t n=0;n<layers-1;n++)
+ {
+  size_t row=cMatrix_W[n].GetSizeY();
+  size_t col=cMatrix_W[n].GetSizeX();
+  fprintf(file,"//Матрица весов связей слоя %ld со слоем %ld"<<std::endl,n,n+1);
+  fprintf(file,"static const float MatrixW%ld[%ld*%ld]="<<std::endl,n,row,col);
+  fprintf(file,"{"<<std::endl);
+  for(size_t r=0;r<row;r++)
+  {
+   fprintf(file," ");
+   for(size_t c=0;c<col;c++) 
+   {
+	fprintf(file,"%f",cMatrix_W[n].GetElement(r,c));
+	if (r!=row-1 || c!=col-1) fprintf(file,",");
+   }   
+   fprintf(file,""<<std::endl);
+  }
+  fprintf(file,"};"<<std::endl);
+
+  fprintf(file,"//Вектор сдвигов связей слоя %ld со слоем %ld"<<std::endl,n,n+1);
+  row=cVector_B[n].GetSize();
+  fprintf(file,"static const float VectorB%ld[%ld]="<<std::endl,n,row);
+  fprintf(file,"{"<<std::endl);
+  for(size_t r=0;r<row;r++)
+  {
+   fprintf(file," %f",cVector_B[n].GetElement(r));
+   if (r!=row-1) fprintf(file,",");
+   fprintf(file,""<<std::endl);
+  }
+  fprintf(file,"};"<<std::endl);
+  fprintf(file,"//----------------------------------------------------------------------------------------------------"<<std::endl);
+ }
+
+ fprintf(file,"//Количество нейронов в слоях"<<std::endl);
+ fprintf(file,"static const size_t NeuronInLayer[%ld]="<<std::endl,layers);
+ fprintf(file,"{"<<std::endl);
+ for(size_t n=0;n<layers;n++)
+ {
+  fprintf(file," %ld",NeuronInLayers[n]);
+  if (n!=layers-1) fprintf(file,",");
+  fprintf(file,""<<std::endl);
+ }
+ fprintf(file,"};"<<std::endl);
+ fprintf(file,"//Массив указателей на матрицы связей"<<std::endl);
+ fprintf(file,"static const float *MatrixWPtr[%ld]="<<std::endl,layers-1);
+ fprintf(file,"{"<<std::endl);
+ for(size_t n=0;n<layers-1;n++)
+ {
+  fprintf(file," MatrixW%ld",n);
+  if (n!=layers-2) fprintf(file,",");
+  fprintf(file,""<<std::endl);
+ }
+ fprintf(file,"};"<<std::endl);
+
+ fprintf(file,"//Массив указателей на вектора сдвигов"<<std::endl);
+ fprintf(file,"static const float *VectorBPtr[%ld]="<<std::endl,layers-1);
+ fprintf(file,"{"<<std::endl);
+ for(size_t n=0;n<layers-1;n++)
+ {
+  fprintf(file," VectorB%ld",n);
+  if (n!=layers-2) fprintf(file,",");
+  fprintf(file,""<<std::endl);
+ }
+ fprintf(file,"};"<<std::endl);
+
+ fprintf(file,""<<std::endl);
+ fprintf(file,"//****************************************************************************************************"<<std::endl);
+ fprintf(file,"//глобальные переменные"<<std::endl);
+ fprintf(file,"//****************************************************************************************************"<<std::endl);
+
+ for(size_t n=0;n<layers;n++)
+ {
+  fprintf(file,"//Вектор состояния нейронов для слоя %ld"<<std::endl,n);
+  size_t row=cVector_H[n].GetSize();
+  fprintf(file,"static float VectorH%ld[%ld];"<<std::endl,n,row);
+ }
+ fprintf(file,"//Массив указателей на вектора состояний"<<std::endl);
+
+ fprintf(file,"static float * const VectorHPtr[%ld]="<<std::endl,layers);
+ fprintf(file,"{"<<std::endl);
+ for(size_t n=0;n<layers;n++)
+ {
+  fprintf(file," VectorH%ld",n);
+  if (n!=layers-1) fprintf(file,",");
+  fprintf(file,""<<std::endl);
+ }
+ fprintf(file,"};"<<std::endl);
+ 
+ //функция активации
+ fprintf(file,""<<std::endl);
+ fprintf(file,"//****************************************************************************************************"<<std::endl);
+ fprintf(file,"//функции"<<std::endl);
+ fprintf(file,"//****************************************************************************************************"<<std::endl);
+
+ fprintf(file,"//----------------------------------------------------------------------------------------------------"<<std::endl);
+ fprintf(file,"//функция активации нейрона"<<std::endl);
+ fprintf(file,"//----------------------------------------------------------------------------------------------------"<<std::endl);
+
+ fprintf(file,"static float NeuronFunction(float value)"<<std::endl);
+ fprintf(file,"{"<<std::endl);
+ fprintf(file," return(1.0f/(1.0f+(float)(exp(-value))));"<<std::endl);
+ fprintf(file,"}"<<std::endl);
+ fprintf(file,""<<std::endl);
+
+ fprintf(file,"//----------------------------------------------------------------------------------------------------"<<std::endl);
+ fprintf(file,"//функция расчёта нейросети"<<std::endl);
+ fprintf(file,"//----------------------------------------------------------------------------------------------------"<<std::endl);
+
+ fprintf(file,"void CreateAnswer(void)"<<std::endl);
+ fprintf(file,"{"<<std::endl);
+ fprintf(file," for(size_t n=0;n<%ld;n++)"<<std::endl,layers-1);
+ fprintf(file," {"<<std::endl);
+ fprintf(file,"  float *vector_h_current=VectorHPtr[n];"<<std::endl);
+ fprintf(file,"  float *vector_h_next=VectorHPtr[n+1];"<<std::endl);
+ fprintf(file,"  const float *vector_b_current=VectorBPtr[n];"<<std::endl);
+ fprintf(file,"  const float *matrix_w_current=MatrixWPtr[n];"<<std::endl);
+ fprintf(file,""<<std::endl);
+ fprintf(file,"  size_t mx=NeuronInLayer[n];//размер матрицы по x"<<std::endl);
+ fprintf(file,"  size_t my=NeuronInLayer[n+1];//размер матрицы по y"<<std::endl);
+ fprintf(file,""<<std::endl);
+ fprintf(file,"  //умножается строка матрицы на столбец вектора, добавляется вектор смещения и применяется функция активации нейрона"<<std::endl);
+ fprintf(file,"  for(size_t y=0;y<my;y++)"<<std::endl);
+ fprintf(file,"  {"<<std::endl);
+ fprintf(file,"   float value=0;"<<std::endl);
+ fprintf(file,"   for(size_t x=0;x<mx;x++)"<<std::endl);
+ fprintf(file,"   {"<<std::endl);
+ fprintf(file,"    float m_value=matrix_w_current[mx*y+x];"<<std::endl);
+ fprintf(file,"    float v_value=vector_h_current[x];"<<std::endl);
+ fprintf(file,"    value+=m_value*v_value;"<<std::endl);
+ fprintf(file,"   }"<<std::endl);
+ fprintf(file,"   vector_h_next[y]=NeuronFunction(value+vector_b_current[y]);"<<std::endl);
+ fprintf(file,"  }"<<std::endl);
+ fprintf(file," }"<<std::endl);
+ fprintf(file,"}"<<std::endl);
+
+ fclose(file);
+ return(true);
+ */
+
+ std::ofstream ofile;
+ ofile.open(file_name,std::ios_base::out|std::ios_base::binary);
+ if (ofile.is_open()==false) return(false);
+  
+ ofile<<"//****************************************************************************************************"<<std::endl;
+ ofile<<"//подключаемые библиотеки"<<std::endl;
+ ofile<<"//****************************************************************************************************"<<std::endl;
+ ofile<<"#include <stdio.h>"<<std::endl;
+ ofile<<"#include <math.h>"<<std::endl;
+ ofile<<""<<std::endl;
+
+ ofile<<"//****************************************************************************************************"<<std::endl;
+ ofile<<"//константы"<<std::endl;
+ ofile<<"//****************************************************************************************************"<<std::endl;
+
+ for(size_t n=0;n<layers-1;n++)
+ {
+  size_t row=cMatrix_W[n].GetSizeY();
+  size_t col=cMatrix_W[n].GetSizeX();
+  ofile<<"//Матрица весов связей слоя "<<n<<" со слоем "<<(n+1)<<std::endl;
+  ofile<<"static const float MatrixW"<<n<<"["<<row<<"*"<<col<<"]="<<std::endl;
+  ofile<<"{"<<std::endl;
+  for(size_t r=0;r<row;r++)
+  {
+   ofile<<" ";
+   for(size_t c=0;c<col;c++) 
+   {
+	ofile<<cMatrix_W[n].GetElement(r,c);
+	if (r!=row-1 || c!=col-1) ofile<<",";
+   }   
+   ofile<<std::endl;
+  }
+  ofile<<"};"<<std::endl;
+
+  ofile<<"//Вектор сдвигов связей слоя "<<n<<" со слоем "<<(n+1)<<std::endl;
+  row=cVector_B[n].GetSize();
+  ofile<<"static const float VectorB"<<n<<"["<<row<<"]="<<std::endl;
+  ofile<<"{"<<std::endl;
+  for(size_t r=0;r<row;r++)
+  {
+   ofile<<" "<<cVector_B[n].GetElement(r);
+   if (r!=row-1) ofile<<",";
+   ofile<<std::endl;
+  }
+  ofile<<"};"<<std::endl;
+  ofile<<"//----------------------------------------------------------------------------------------------------"<<std::endl;
+ }
+
+ ofile<<"//Количество нейронов в слоях"<<std::endl;
+ ofile<<"static const size_t NeuronInLayer["<<layers<<"]="<<std::endl;
+ ofile<<"{"<<std::endl;
+ for(size_t n=0;n<layers;n++)
+ {
+  ofile<<" "<<NeuronInLayers[n];
+  if (n!=layers-1) ofile<<",";
+  ofile<<std::endl;
+ }
+ ofile<<"};"<<std::endl;
+ ofile<<"//Массив указателей на матрицы связей"<<std::endl;
+ ofile<<"static const float *MatrixWPtr["<<(layers-1)<<"]="<<std::endl;
+ ofile<<"{"<<std::endl;
+ for(size_t n=0;n<layers-1;n++)
+ {
+  ofile<<" MatrixW"<<n;
+  if (n!=layers-2) ofile<<",";
+  ofile<<std::endl;
+ }
+ ofile<<"};"<<std::endl;
+
+ ofile<<"//Массив указателей на вектора сдвигов"<<std::endl;
+ ofile<<"static const float *VectorBPtr["<<(layers-1)<<"]="<<std::endl;
+ ofile<<"{"<<std::endl;
+ for(size_t n=0;n<layers-1;n++)
+ {
+  ofile<<" VectorB"<<n;
+  if (n!=layers-2) ofile<<",";
+  ofile<<std::endl;
+ }
+ ofile<<"};"<<std::endl;
+
+ ofile<<""<<std::endl;
+ ofile<<"//****************************************************************************************************"<<std::endl;
+ ofile<<"//глобальные переменные"<<std::endl;
+ ofile<<"//****************************************************************************************************"<<std::endl;
+
+ for(size_t n=0;n<layers;n++)
+ {
+  ofile<<"//Вектор состояния нейронов для слоя "<<n<<std::endl;
+  size_t row=cVector_H[n].GetSize();
+  ofile<<"static float VectorH"<<n<<"["<<row<<"];"<<std::endl;
+ }
+ ofile<<"//Массив указателей на вектора состояний"<<std::endl;
+
+ ofile<<"static float * const VectorHPtr["<<layers<<"]="<<std::endl;
+ ofile<<"{"<<std::endl;
+ for(size_t n=0;n<layers;n++)
+ {
+  ofile<<" VectorH"<<n;
+  if (n!=layers-1) ofile<<",";
+  ofile<<std::endl;
+ }
+ ofile<<"};"<<std::endl;
+ 
+ //функция активации
+ ofile<<std::endl;
+ ofile<<"//****************************************************************************************************"<<std::endl;
+ ofile<<"//функции"<<std::endl;
+ ofile<<"//****************************************************************************************************"<<std::endl;
+
+ ofile<<"//----------------------------------------------------------------------------------------------------"<<std::endl;
+ ofile<<"//функция активации нейрона"<<std::endl;
+ ofile<<"//----------------------------------------------------------------------------------------------------"<<std::endl;
+
+ ofile<<"static float NeuronFunction(float value)"<<std::endl;
+ ofile<<"{"<<std::endl;
+ ofile<<" return(1.0f/(1.0f+(float)(exp(-value))));"<<std::endl;
+ ofile<<"}"<<std::endl;
+ ofile<<""<<std::endl;
+
+ ofile<<"//----------------------------------------------------------------------------------------------------"<<std::endl;
+ ofile<<"//функция расчёта нейросети"<<std::endl;
+ ofile<<"//----------------------------------------------------------------------------------------------------"<<std::endl;
+
+ ofile<<"void CreateAnswer(void)"<<std::endl;
+ ofile<<"{"<<std::endl;
+ ofile<<" for(size_t n=0;n<"<<(layers-1)<<";n++)"<<std::endl;
+ ofile<<" {"<<std::endl;
+ ofile<<"  float *vector_h_current=VectorHPtr[n];"<<std::endl;
+ ofile<<"  float *vector_h_next=VectorHPtr[n+1];"<<std::endl;
+ ofile<<"  const float *vector_b_current=VectorBPtr[n];"<<std::endl;
+ ofile<<"  const float *matrix_w_current=MatrixWPtr[n];"<<std::endl;
+ ofile<<""<<std::endl;
+ ofile<<"  size_t mx=NeuronInLayer[n];//размер матрицы по x"<<std::endl;
+ ofile<<"  size_t my=NeuronInLayer[n+1];//размер матрицы по y"<<std::endl;
+ ofile<<""<<std::endl;
+ ofile<<"  //умножается строка матрицы на столбец вектора, добавляется вектор смещения и применяется функция активации нейрона"<<std::endl;
+ ofile<<"  for(size_t y=0;y<my;y++)"<<std::endl;
+ ofile<<"  {"<<std::endl;
+ ofile<<"   float value=0;"<<std::endl;
+ ofile<<"   for(size_t x=0;x<mx;x++)"<<std::endl;
+ ofile<<"   {"<<std::endl;
+ ofile<<"    float m_value=matrix_w_current[mx*y+x];"<<std::endl;
+ ofile<<"    float v_value=vector_h_current[x];"<<std::endl;
+ ofile<<"    value+=m_value*v_value;"<<std::endl;
+ ofile<<"   }"<<std::endl;
+ ofile<<"   vector_h_next[y]=NeuronFunction(value+vector_b_current[y]);"<<std::endl;
+ ofile<<"  }"<<std::endl;
+ ofile<<" }"<<std::endl;
+ ofile<<"}"<<std::endl;
+
+
+ ofile.close();
+ return(true);
 }

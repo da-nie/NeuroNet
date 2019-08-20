@@ -34,7 +34,7 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevstance,LPSTR lpstrCmdLine,
   CNeuroNet cNeuroNet;
   std::vector<size_t> neuron_in_layers(3);
   neuron_in_layers[0]=10;//входной слой
-  neuron_in_layers[1]=10;
+  neuron_in_layers[1]=5;
   neuron_in_layers[2]=10;//выходной слой
   //создаём нейросеть
   cNeuroNet.Create(neuron_in_layers);
@@ -56,16 +56,16 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevstance,LPSTR lpstrCmdLine,
   image[i].first.SetElement(8,8);
   image[i].first.SetElement(9,9);
   //выходной вектор
-  image[i].second.SetElement(0,0.0);
-  image[i].second.SetElement(1,0.1);
-  image[i].second.SetElement(2,0.2);
-  image[i].second.SetElement(3,0.3);
-  image[i].second.SetElement(4,0.4);
-  image[i].second.SetElement(5,0.5);
-  image[i].second.SetElement(6,0.6);
-  image[i].second.SetElement(7,0.7);
-  image[i].second.SetElement(8,0.8);
-  image[i].second.SetElement(9,0.9);
+  image[i].second.SetElement(0,0.9);
+  image[i].second.SetElement(1,0.8);
+  image[i].second.SetElement(2,0.7);
+  image[i].second.SetElement(3,0.6);
+  image[i].second.SetElement(4,0.5);
+  image[i].second.SetElement(5,0.4);
+  image[i].second.SetElement(6,0.3);
+  image[i].second.SetElement(7,0.2);
+  image[i].second.SetElement(8,0.1);
+  image[i].second.SetElement(9,0.0);
   
   //второй образ
   i++;
@@ -82,16 +82,16 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevstance,LPSTR lpstrCmdLine,
   image[i].first.SetElement(8,1);
   image[i].first.SetElement(9,0);
   //выходной вектор
-  image[i].second.SetElement(0,0.9);
-  image[i].second.SetElement(1,0.8);
-  image[i].second.SetElement(2,0.7);
-  image[i].second.SetElement(3,0.6);
-  image[i].second.SetElement(4,0.5);
-  image[i].second.SetElement(5,0.4);
-  image[i].second.SetElement(6,0.3);
-  image[i].second.SetElement(7,0.2);
-  image[i].second.SetElement(8,0.1);
-  image[i].second.SetElement(9,0.0);
+  image[i].second.SetElement(0,0.0);
+  image[i].second.SetElement(1,0.1);
+  image[i].second.SetElement(2,0.2);
+  image[i].second.SetElement(3,0.3);
+  image[i].second.SetElement(4,0.4);
+  image[i].second.SetElement(5,0.5);
+  image[i].second.SetElement(6,0.6);
+  image[i].second.SetElement(7,0.7);
+  image[i].second.SetElement(8,0.8);
+  image[i].second.SetElement(9,0.9);
   //обучаем нейросеть
   cNeuroNet.Reset();
   const double speed=0.25;//скорость обучения
@@ -129,11 +129,14 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevstance,LPSTR lpstrCmdLine,
    out+=str;
   }
   MessageBox(NULL,out.c_str(),"Результат",MB_OK);
+
+  cNeuroNet.Export("net.txt");
  }
  catch(const char *text)
  {
   MessageBox(NULL,text,"Ошибка",MB_OK);
  }
+ 
  exit(EXIT_SUCCESS);
 }
  
