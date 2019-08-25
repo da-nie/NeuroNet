@@ -50,10 +50,129 @@ CVector::~CVector()
 //закрытые функции
 //****************************************************************************************************
 
+
+//****************************************************************************************************
+//статические функции
+//****************************************************************************************************
+
+//----------------------------------------------------------------------------------------------------
+//сложить вектора
+//----------------------------------------------------------------------------------------------------
+void CVector::Add(CVector &cVector_Output,const CVector& cVector_Left,const CVector& cVector_Right)
+{
+ if (cVector_Left.Size!=cVector_Right.Size || cVector_Output.Size!=cVector_Left.Size)
+ {
+  throw "Ошибка оператора '+'! Размерности векторов не совпадают!";
+  return;
+ }
+ for(size_t n=0;n<cVector_Left.Size;n++)
+ {
+  cVector_Output.Item[n]=cVector_Left.Item[n]+cVector_Right.Item[n];
+ }
+}
+//----------------------------------------------------------------------------------------------------
+//вычесть вектора
+//----------------------------------------------------------------------------------------------------
+void CVector::Sub(CVector &cVector_Output,const CVector& cVector_Left,const CVector& cVector_Right)
+{
+ if (cVector_Left.Size!=cVector_Right.Size || cVector_Output.Size!=cVector_Left.Size)
+ {
+  throw "Ошибка оператора '-'! Размерности векторов не совпадают!";
+  return;
+ }
+ for(size_t n=0;n<cVector_Left.Size;n++)
+ {
+  cVector_Output.Item[n]=cVector_Left.Item[n]-cVector_Right.Item[n];
+ }
+}
+//----------------------------------------------------------------------------------------------------
+//скалярное произведение векторов
+//----------------------------------------------------------------------------------------------------
+double CVector::Mul(const CVector& cVector_Left,const CVector& cVector_Right)
+{
+ if (cVector_Left.Size!=cVector_Right.Size)
+ {
+  throw "Ошибка оператора '*'! Размерности векторов не совпадают!";
+  return(0);
+ }
+ double ret=0;
+ for(size_t n=0;n<cVector_Left.Size;n++)
+ {
+  ret+=cVector_Left.Item[n]*cVector_Right.Item[n];
+ }
+ return(ret);
+}
+//----------------------------------------------------------------------------------------------------
+//векторное произведение
+//----------------------------------------------------------------------------------------------------
+void CVector::Mul(CVector &cVector_Output,const CVector& cVector_Left,const CVector& cVector_Right)
+{
+ if (cVector_Left.Size!=3 || cVector_Right.Size!=3)//только для векторов размерности 3
+ {
+  throw "Ошибка! Не определено векторное произведение векторов размерности отличной от 3.";
+  return;
+ }
+ cVector_Output.Item[0]=cVector_Left.Item[1]*cVector_Right.Item[2]-cVector_Right.Item[1]*cVector_Left.Item[2];
+ cVector_Output.Item[1]=-(cVector_Left.Item[0]*cVector_Right.Item[2]-cVector_Right.Item[0]*cVector_Left.Item[2]);
+ cVector_Output.Item[2]=cVector_Left.Item[0]*cVector_Right.Item[1]-cVector_Right.Item[0]*cVector_Left.Item[1];
+}
+//----------------------------------------------------------------------------------------------------
+//умножение на число справа
+//----------------------------------------------------------------------------------------------------
+void CVector::Mul(CVector &cVector_Output,const CVector& cVector_Left,const double &value_right)
+{
+ if (cVector_Output.Size!=cVector_Left.Size)
+ {
+  throw "Ошибка оператора '*'! Размерности векторов не совпадают!";
+  return;
+ }
+ for(size_t n=0;n<cVector_Left.Size;n++)
+ {
+  cVector_Output.Item[n]=cVector_Left.Item[n]*value_right;
+ }
+}
+//----------------------------------------------------------------------------------------------------
+//умножение на число слева
+//----------------------------------------------------------------------------------------------------
+void CVector::Mul(CVector &cVector_Output,const double &value_left,const CVector& cVector_Right)
+{
+ if (cVector_Output.Size!=cVector_Right.Size)
+ {
+  throw "Ошибка оператора '*'! Размерности векторов не совпадают!";
+  return;
+ }
+ for(size_t n=0;n<cVector_Right.Size;n++)
+ {
+  cVector_Output.Item[n]=cVector_Right.Item[n]*value_left;
+ }
+}
+//----------------------------------------------------------------------------------------------------
+//деление на число
+//----------------------------------------------------------------------------------------------------
+void CVector::Div(CVector &cVector_Output,const CVector& cVector_Left,const double &value_right)
+{
+ if (cVector_Output.Size!=cVector_Left.Size)
+ {
+  throw "Ошибка оператора '/'! Размерности векторов не совпадают!";
+  return;
+ }
+ for(size_t n=0;n<cVector_Left.Size;n++)
+ {
+  cVector_Output.Item[n]=cVector_Left.Item[n]/value_right;
+ }
+}
+
 //****************************************************************************************************
 //открытые функции
 //****************************************************************************************************
 
+//----------------------------------------------------------------------------------------------------
+//получить указатель на данные
+//----------------------------------------------------------------------------------------------------
+double* CVector::GetItemPtr(void)
+{
+ return(&Item[0]);
+}
 //----------------------------------------------------------------------------------------------------
 //получить размер вектора
 //----------------------------------------------------------------------------------------------------
@@ -148,7 +267,16 @@ void CVector::Zero(void)
 {
  for(size_t n=0;n<Size;n++) Item[n]=0;
 }
- 
+//----------------------------------------------------------------------------------------------------
+//переместить вектор
+//----------------------------------------------------------------------------------------------------
+void CVector::Move(CVector &cVector)
+{ 
+ if (this==&cVector) return;
+ Item=std::move(cVector.Item);
+ Size=cVector.Size;
+ cVector.Size=0;
+}
 //----------------------------------------------------------------------------------------------------
 //оператор "="
 //----------------------------------------------------------------------------------------------------
@@ -166,56 +294,27 @@ CVector& CVector::operator=(const CVector &cVector)
 //----------------------------------------------------------------------------------------------------
 //оператор "+"
 //----------------------------------------------------------------------------------------------------
- 
 CVector operator+(const CVector& cVector_Left,const CVector& cVector_Right)
 {
  CVector cVector(cVector_Left.Size);
- if (cVector_Left.Size!=cVector_Right.Size)
- {
-  throw "Ошибка оператора '+'! Размерности векторов не совпадают!";
-  return(cVector);
- }
- for(size_t n=0;n<cVector_Left.Size;n++)
- {
-  cVector.Item[n]=cVector_Left.Item[n]+cVector_Right.Item[n];
- }
+ CVector::Add(cVector,cVector_Left,cVector_Right);
  return(cVector);
 }
 //----------------------------------------------------------------------------------------------------
 //оператор "-"
 //----------------------------------------------------------------------------------------------------
- 
 CVector operator-(const CVector& cVector_Left,const CVector& cVector_Right)
 {
  CVector cVector(cVector_Left.Size);
- if (cVector_Left.Size!=cVector_Right.Size)
- {
-  throw "Ошибка оператора '-'! Размерности векторов не совпадают!";
-  return(cVector);
- }
- for(size_t n=0;n<cVector_Left.Size;n++)
- {
-  cVector.Item[n]=cVector_Left.Item[n]-cVector_Right.Item[n];
- }
+ CVector::Sub(cVector,cVector_Left,cVector_Right);
  return(cVector);
 }
 //----------------------------------------------------------------------------------------------------
 //оператор "*" (скалярное произведение)
 //----------------------------------------------------------------------------------------------------
- 
 double operator*(const CVector& cVector_Left,const CVector& cVector_Right)
 {
- if (cVector_Left.Size!=cVector_Right.Size)
- {
-  throw "Ошибка оператора '-'! Размерности векторов не совпадают!";
-  return(0);
- }
- double ret=0;
- for(size_t n=0;n<cVector_Left.Size;n++)
- {
-  ret+=cVector_Left.Item[n]*cVector_Right.Item[n];
- }
- return(ret);
+ return(CVector::Mul(cVector_Left,cVector_Right));
 }
 //----------------------------------------------------------------------------------------------------
 //оператор "^" (векторное произведение)
@@ -223,16 +322,9 @@ double operator*(const CVector& cVector_Left,const CVector& cVector_Right)
  
 CVector operator^(const CVector& cVector_Left,const CVector& cVector_Right)
 {
- if (cVector_Left.Size==3 && cVector_Right.Size==3)//только для векторов размерности 3
- {
-  CVector cVector(cVector_Left.Size);
-  cVector.Item[0]=cVector_Left.Item[1]*cVector_Right.Item[2]-cVector_Right.Item[1]*cVector_Left.Item[2];
-  cVector.Item[1]=-(cVector_Left.Item[0]*cVector_Right.Item[2]-cVector_Right.Item[0]*cVector_Left.Item[2]);
-  cVector.Item[2]=cVector_Left.Item[0]*cVector_Right.Item[1]-cVector_Right.Item[0]*cVector_Left.Item[1];
-  return(cVector);
- }
- throw "Ошибка! Не определено векторное произведение векторов размерности отличной от 3.";
- return(cVector_Left);
+ CVector cVector(cVector_Left.Size);
+ CVector::Mul(cVector,cVector_Left,cVector_Right);
+ return(cVector);
 }
 //----------------------------------------------------------------------------------------------------
 //оператор "*"
@@ -241,10 +333,7 @@ CVector operator^(const CVector& cVector_Left,const CVector& cVector_Right)
 CVector operator*(const CVector& cVector_Left,const double &value_right)
 {
  CVector cVector(cVector_Left.Size);
- for(size_t n=0;n<cVector_Left.Size;n++)
- {
-  cVector.Item[n]=cVector_Left.Item[n]*value_right;
- }
+ CVector::Mul(cVector,cVector_Left,value_right);
  return(cVector);
 }
 //----------------------------------------------------------------------------------------------------
@@ -254,10 +343,7 @@ CVector operator*(const CVector& cVector_Left,const double &value_right)
 CVector operator*(const double &value_left,const CVector& cVector_Right)
 {
  CVector cVector(cVector_Right.Size);
- for(size_t n=0;n<cVector_Right.Size;n++)
- {
-  cVector.Item[n]=cVector_Right.Item[n]*value_left;
- }
+ CVector::Mul(cVector,value_left,cVector_Right);
  return(cVector);
 }
 //----------------------------------------------------------------------------------------------------
@@ -267,14 +353,89 @@ CVector operator*(const double &value_left,const CVector& cVector_Right)
 CVector operator/(const CVector& cVector_Left,const double &value_right)
 {
  CVector cVector(cVector_Left.Size);
- for(size_t n=0;n<cVector_Left.Size;n++)
- {
-  cVector.Item[n]=cVector_Left.Item[n]/value_right;
- }
+ CVector::Div(cVector,cVector_Left,value_right);
  return(cVector);
 }
+//----------------------------------------------------------------------------------------------------
+//сохранить вектор
+//----------------------------------------------------------------------------------------------------
+bool CVector::Save(IDataStream *iDataStream_Ptr)
+{
+ //сохраняем размерность вектора
+ iDataStream_Ptr->SaveUInt32(Size);
+ //сохраняем данные вектора
+ for(size_t n=0;n<Size;n++) iDataStream_Ptr->SaveDouble(Item[n]);
+ return(true);
+}
+//----------------------------------------------------------------------------------------------------
+//загрузить вектор
+//----------------------------------------------------------------------------------------------------
+bool CVector::Load(IDataStream *iDataStream_Ptr)
+{
+ //загружаем размерность вектора
+ Size=iDataStream_Ptr->LoadUInt32();
 
+ std::vector<double> item(Size);
+ Item.clear();
+ std::swap(Item,item);
 
+ //загружаем данные вектора
+ for(size_t n=0;n<Size;n++) Item[n]=iDataStream_Ptr->LoadDouble();
+ return(true);
+}
+
+//----------------------------------------------------------------------------------------------------
+//протестировать класс векторов
+//----------------------------------------------------------------------------------------------------
+bool CVector::Test(void)
+{
+ CVector cVector_A(3);
+ CVector cVector_B(3);
+ CVector cVector_C(3);
+
+ cVector_A.Set(1,3,5);
+ cVector_B.Set(3,7,11);
+ //проверяем вычитание
+ cVector_C=cVector_A-cVector_B;
+ if (cVector_C.GetElement(0)!=-2) return(false);
+ if (cVector_C.GetElement(1)!=-4) return(false);
+ if (cVector_C.GetElement(2)!=-6) return(false);
+ //проверяем сложение
+ cVector_C=cVector_A+cVector_B;
+ if (cVector_C.GetElement(0)!=4) return(false);
+ if (cVector_C.GetElement(1)!=10) return(false);
+ if (cVector_C.GetElement(2)!=16) return(false);
+ //проверяем скалярное произведение
+ double v=cVector_A*cVector_B;
+ if (v!=(3+21+55)) return(false);
+ //проверяем векторное поизведение
+ cVector_C=cVector_A^cVector_B;
+ //проверяем умножение на число справа
+ cVector_C=cVector_A*2;
+ if (cVector_C.GetElement(0)!=2) return(false);
+ if (cVector_C.GetElement(1)!=6) return(false);
+ if (cVector_C.GetElement(2)!=10) return(false);
+ //проверяем умножение на число слева
+ cVector_C=2*cVector_A;
+ if (cVector_C.GetElement(0)!=2) return(false);
+ if (cVector_C.GetElement(1)!=6) return(false);
+ if (cVector_C.GetElement(2)!=10) return(false);
+ //проверяем деление на число
+ cVector_C=cVector_A/0.5;
+ if (cVector_C.GetElement(0)!=2) return(false);
+ if (cVector_C.GetElement(1)!=6) return(false);
+ if (cVector_C.GetElement(2)!=10) return(false);
+ //проверяем норма
+ double norma=cVector_A.GetNorma();
+ if (norma!=sqrt(1.0*1.0+3.0*3.0+5.0*5.0)) return(false);
+ //проверяем обнуление
+ cVector_A.Zero();
+ if (cVector_A.GetElement(0)!=0) return(false);
+ if (cVector_A.GetElement(1)!=0) return(false);
+ if (cVector_A.GetElement(2)!=00) return(false);
+
+ return(true);
+}
 
  
 

@@ -9,6 +9,7 @@
 //подключаемые библиотеки
 //****************************************************************************************************
 #include <vector>
+#include "idatastream.h"
 
 //****************************************************************************************************
 //макроопределения
@@ -56,6 +57,7 @@ class CVector
   ~CVector();
  public:
   //-открытые функции-----------------------------------------------------------------------------------
+  double *GetItemPtr(void);//получить указатель на данные
   size_t GetSize(void) const;//получить размер вектора
   void Normalize(void);//нормировка вектора
   double GetNorma(void) const;//получить норму вектора
@@ -66,6 +68,7 @@ class CVector
   void Set(double x,double y,double z);//задать трёхмерный вектор
   void Set(double x,double y,double z,double a);//задать четырёхмерный вектор
   void Zero(void);//обнулить вектор
+  void Move(CVector &cVector);//переместить вектор
   CVector& operator=(const CVector& cVector);//оператор "="
   friend CVector operator+(const CVector& cVector_Left,const CVector& cVector_Right);//оператор "+"
   friend CVector operator-(const CVector& cVector_Left,const CVector& cVector_Right);//оператор "-"
@@ -74,6 +77,32 @@ class CVector
   friend CVector operator*(const CVector& cVector_Left,const double &value_right);//оператор "*"
   friend CVector operator*(const double &value_left,const CVector& cVector_Right);//оператор "*"
   friend CVector operator/(const CVector& cVector_Left,const double &value_right);//оператор "/"
+
+  static void Add(CVector &cVector_Output,const CVector& cVector_Left,const CVector& cVector_Right);//сложить вектора
+  static void Sub(CVector &cVector_Output,const CVector& cVector_Left,const CVector& cVector_Right);//вычесть вектора
+  static double Mul(const CVector& cVector_Left,const CVector& cVector_Right);//скалярное произведение векторов
+  static void Mul(CVector &cVector_Output,const CVector& cVector_Left,const CVector& cVector_Right);//векторное произведение
+  static void Mul(CVector &cVector_Output,const CVector& cVector_Left,const double &value_right);//умножение на число справа
+  static void Mul(CVector &cVector_Output,const double &value_left,const CVector& cVector_Right);//умножение на число слева
+  static void Div(CVector &cVector_Output,const CVector& cVector_Left,const double &value_right);//деление на число
+
+  bool Save(IDataStream *iDataStream_Ptr);//сохранить вектор
+  bool Load(IDataStream *iDataStream_Ptr);//загрузить вектор
+
+  static bool Test(void);//протестировать класс векторов
+
+  void Save(FILE *file)
+  {
+   fwrite(&Size,sizeof(size_t),1,file);
+   for(size_t n=0;n<Size;n++) fwrite(&Item[n],sizeof(double),1,file);
+  }
+
+  void Load(FILE *file)
+  {
+   fread(&Size,sizeof(size_t),1,file);
+   for(size_t n=0;n<Size;n++) fread(&Item[n],sizeof(double),1,file);
+  }
+
  private:
   //-закрытые функции-----------------------------------------------------------------------------------  
 };

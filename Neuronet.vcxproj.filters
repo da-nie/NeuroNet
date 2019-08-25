@@ -27,6 +27,12 @@
     <ClCompile Include="cneuronet.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
+    <ClCompile Include="cdatastreamfile.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
+    <ClCompile Include="idatastream.cpp">
+      <Filter>Source Files</Filter>
+    </ClCompile>
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="cmatrix.h">
@@ -36,6 +42,12 @@
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="cneuronet.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="cdatastreamfile.h">
+      <Filter>Header Files</Filter>
+    </ClInclude>
+    <ClInclude Include="idatastream.h">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

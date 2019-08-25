@@ -2,6 +2,7 @@
 #include <stdio.h>
  
 #include "cneuronet.h"
+#include "idatastream.h"
 
 /*
 // https://proglib.io/p/neural-nets-guide/
@@ -114,6 +115,9 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevstance,LPSTR lpstrCmdLine,
   MessageBox(NULL,out.c_str(),"Результат",MB_OK);
 
   cNeuroNet.Export("net.txt");
+  //сохраним нейросеть
+  std::unique_ptr<IDataStream> iDataStream_Ptr(IDataStream::CreateNewDataStreamFile("neuronet.net",true));
+  cNeuroNet.Save(iDataStream_Ptr.get());
  }
  catch(const char *text)
  {

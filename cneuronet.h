@@ -14,6 +14,7 @@
 #include <string>
 #include "cmatrix.h"
 #include "cvector.h"
+#include "idatastream.h"
 
 //****************************************************************************************************
 //макроопределения
@@ -47,6 +48,13 @@ class CNeuroNet
   std::vector<CVector> cVector_Z;//значение до активационной функции
   std::vector<CVector> cVector_Delta;//ошибки слоёв
   CVector cVector_Error;//вектор ошибки  
+
+  //вспомогательные матрицы и вектора
+  std::vector<CVector> cVector_TmpZ;
+  std::vector<CMatrix> cMatrix_TmpW;
+  std::vector<CMatrix> cMatrix_TmpDelta;
+  std::vector<CMatrix> cMatrix_Tmp;
+  std::vector<CVector> cVector_Tmp;
  public:
   //-конструктор----------------------------------------------------------------------------------------
   CNeuroNet(void);
@@ -59,6 +67,32 @@ class CNeuroNet
   double Training(const std::vector<std::pair<CVector,CVector>> &image,double speed,double max_cost,size_t max_iteration);//обучить нейросеть
   void GetAnswer(const CVector &input,CVector &output);//вычислить результат работы нейросети
   bool Export(const std::string &file_name);//экспортировать нейросеть
+
+  bool Save(IDataStream *iDataStream_Ptr);//сохранить нейросеть
+  bool Load(IDataStream *iDataStream_Ptr);//загрузить нейросеть
+
+  void Save(FILE *file)
+  {
+   size_t size;
+   size=cMatrix_W.size();
+   fwrite(&size,sizeof(size_t),1,file);
+   for(size_t n=0;n<size;n++) cMatrix_W[n].Save(file);
+
+   size=cVector_B.size();
+   fwrite(&size,sizeof(size_t),1,file);
+   for(size_t n=0;n<size;n++) cVector_B[n].Save(file);
+  }
+
+  void Load(FILE *file)
+  {
+   size_t size;
+   fread(&size,sizeof(size_t),1,file);
+   for(size_t n=0;n<size;n++) cMatrix_W[n].Load(file);
+
+   fread(&size,sizeof(size_t),1,file);
+   for(size_t n=0;n<size;n++) cVector_B[n].Load(file);
+  }
+
  private:
   //-закрытые функции-----------------------------------------------------------------------------------  
   double GetRandValue(double max_value);//случайное число

@@ -74,15 +74,19 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
+    <ClCompile Include="cdatastreamfile.cpp" />
     <ClCompile Include="cmatrix.cpp" />
     <ClCompile Include="cneuronet.cpp" />
     <ClCompile Include="cvector.cpp" />
+    <ClCompile Include="idatastream.cpp" />
     <ClCompile Include="main.cpp" />
   </ItemGroup>
   <ItemGroup>
+    <ClInclude Include="cdatastreamfile.h" />
     <ClInclude Include="cmatrix.h" />
     <ClInclude Include="cneuronet.h" />
     <ClInclude Include="cvector.h" />
+    <ClInclude Include="idatastream.h" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

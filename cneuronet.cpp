@@ -102,6 +102,31 @@ void CNeuroNet::Create(const std::vector<size_t> &neuron_in_layers)
 
  cVector_Error=CVector(NeuronInLayers[layers-1]);
 
+ cVector_TmpZ.resize(layers-1);
+ for(size_t n=0;n<layers-1;n++)
+ {
+  cVector_TmpZ[n]=CVector(cVector_Z[n+1].GetSize());
+ }
+
+ cMatrix_TmpW.resize(layers-1);
+ for(size_t n=layers-2,m=layers-1;m>0;n--,m--)
+ {
+  cMatrix_TmpW[n]=CMatrix(cMatrix_W[n].GetSizeX(),cMatrix_W[n].GetSizeY());
+ }
+ cMatrix_TmpDelta.resize(layers-1);
+ for(size_t n=layers-2,m=layers-1;m>0;n--,m--)
+ {
+  cMatrix_TmpDelta[n]=CMatrix(cVector_Delta[n+1].GetSize(),cVector_H[n].GetSize());
+ }
+
+ cMatrix_Tmp.resize(layers-1);
+ cVector_Tmp.resize(layers-1);
+ for(size_t n=layers-2,m=layers-1;m>0;n--,m--)
+ {
+  cMatrix_Tmp[n]=CMatrix(cMatrix_dW[n].GetSizeY(),cMatrix_dW[n].GetSizeX());
+  cVector_Tmp[n]=CVector(cVector_dB[n].GetSize());
+ }
+   
  Reset();
 }
 //----------------------------------------------------------------------------------------------------
@@ -157,7 +182,9 @@ double CNeuroNet::Training(const std::vector<std::pair<CVector,CVector>> &image,
    //вычисляем сеть
    for(size_t n=0;n<layers-1;n++)
    {
-    cVector_Z[n+1]=cMatrix_W[n]*cVector_H[n]+cVector_B[n];
+	CMatrix::Mul(cVector_TmpZ[n],cMatrix_W[n],cVector_H[n]);
+	CVector::Add(cVector_Z[n+1],cVector_TmpZ[n],cVector_B[n]);
+    //cVector_Z[n+1].Move(cMatrix_W[n]*cVector_H[n]+cVector_B[n]);
     //применим функцию активации
     for(size_t y=0;y<cVector_Z[n+1].GetSize();y++)
     {
@@ -166,7 +193,9 @@ double CNeuroNet::Training(const std::vector<std::pair<CVector,CVector>> &image,
     }
    }
    //вычислим ошибку   
-   cVector_Error=cVector_Output-cVector_H[layers-1];//вектор ошибок
+   //cVector_Error.Move(cVector_Output-cVector_H[layers-1]);//вектор ошибок
+
+   CVector::Sub(cVector_Error,cVector_Output,cVector_H[layers-1]);//вектор ошибок
    //вычисляем функцию стоимости
    for(size_t y=0;y<cVector_Error.GetSize();y++) cost+=cVector_Error.GetElement(y)*cVector_Error.GetElement(y);
    
@@ -180,7 +209,10 @@ double CNeuroNet::Training(const std::vector<std::pair<CVector,CVector>> &image,
    //вычисляем дельты всех слоёв (дельта нулевого слоя не нужна)
    for(size_t n=layers-2,m=layers-1;m>0;n--,m--)
    {
-    cVector_Delta[n]=cMatrix_W[n].Transpose()*cVector_Delta[n+1];
+    //cVector_Delta[n].Move(cMatrix_W[n].Transpose()*cVector_Delta[n+1]);
+	CMatrix::Transponse(cMatrix_TmpW[n],cMatrix_W[n]);
+	CMatrix::Mul(cVector_Delta[n],cMatrix_TmpW[n],cVector_Delta[n+1]);
+
     for(size_t y=0;y<cVector_Delta[n].GetSize();y++)
     {
      double v=cVector_Delta[n].GetElement(y);
@@ -191,11 +223,17 @@ double CNeuroNet::Training(const std::vector<std::pair<CVector,CVector>> &image,
    //вычисляем поправки к весам и смещениям
    for(size_t n=layers-2,m=layers-1;m>0;n--,m--)
    {
-    CMatrix cMatrix(cVector_Delta[n+1].GetSize(),cVector_H[n].GetSize());
-    cMatrix=(cVector_Delta[n+1])&(cVector_H[n]);
-    cMatrix_dW[n]=cMatrix_dW[n]+cMatrix;
+    CMatrix::Mul(cMatrix_TmpDelta[n],cVector_Delta[n+1],cVector_H[n]);
+    CMatrix::Add(cMatrix_dW[n],cMatrix_dW[n],cMatrix_TmpDelta[n]);
      
-    cVector_dB[n]=cVector_dB[n]+cVector_Delta[n+1];
+	CVector::Add(cVector_dB[n],cVector_dB[n],cVector_Delta[n+1]);
+
+/*    CMatrix cMatrix(cVector_Delta[n+1].GetSize(),cVector_H[n].GetSize());
+    cMatrix.Move((cVector_Delta[n+1])&(cVector_H[n]));
+    cMatrix_dW[n].Move(cMatrix_dW[n]+cMatrix);
+     
+    cVector_dB[n].Move(cVector_dB[n]+cVector_Delta[n+1]);
+	*/
    }     
   }
   if (cost<=max_cost) break;//обучение окончено
@@ -203,8 +241,14 @@ double CNeuroNet::Training(const std::vector<std::pair<CVector,CVector>> &image,
   //выполняем градиентный спуск
   for(size_t n=layers-2,m=layers-1;m>0;n--,m--)
   {
-   cMatrix_W[n]=cMatrix_W[n]-k*cMatrix_dW[n];
-   cVector_B[n]=cVector_B[n]-k*cVector_dB[n];
+   CMatrix::Mul(cMatrix_Tmp[n],k,cMatrix_dW[n]);
+//   cMatrix_W[n].Move(cMatrix_W[n]-k*cMatrix_dW[n]);
+//   cVector_B[n].Move(cVector_B[n]-k*cVector_dB[n]);
+
+   CMatrix::Sub(cMatrix_W[n],cMatrix_W[n],cMatrix_Tmp[n]);
+
+   CVector::Mul(cVector_Tmp[n],k,cVector_dB[n]);
+   CVector::Sub(cVector_B[n],cVector_B[n],cVector_Tmp[n]);
   }
  }
  return(cost);
@@ -219,8 +263,10 @@ void CNeuroNet::GetAnswer(const CVector &input,CVector &output)
  cVector_H[0]=input;//входной вектор
  //вычисляем сеть
  for(size_t n=0;n<layers-1;n++)
- {
-  cVector_Z[n+1]=cMatrix_W[n]*cVector_H[n]+cVector_B[n];
+{ 
+  CMatrix::Mul(cVector_TmpZ[n],cMatrix_W[n],cVector_H[n]);
+  CVector::Add(cVector_Z[n+1],cVector_TmpZ[n],cVector_B[n]);
+  //cVector_Z[n+1].Move(cMatrix_W[n]*cVector_H[n]+cVector_B[n]);
   //применим функцию активации
   for(size_t y=0;y<cVector_Z[n+1].GetSize();y++)
   {
@@ -229,6 +275,7 @@ void CNeuroNet::GetAnswer(const CVector &input,CVector &output)
   }
  }
  output=cVector_H[layers-1];
+
 }
 //----------------------------------------------------------------------------------------------------
 //экспортировать нейросеть
@@ -242,24 +289,24 @@ bool CNeuroNet::Export(const std::string &file_name)
  ofile.open(file_name,std::ios_base::out|std::ios_base::binary);
  if (ofile.is_open()==false) return(false);
   
- ofile<<"//****************************************************************************************************"<<std::endl;
- ofile<<"//подключаемые библиотеки"<<std::endl;
- ofile<<"//****************************************************************************************************"<<std::endl;
- ofile<<"#include <stdio.h>"<<std::endl;
- ofile<<"#include <math.h>"<<std::endl;
- ofile<<""<<std::endl;
+ ofile<<"//****************************************************************************************************"<<"\r"<<std::endl;
+ ofile<<"//подключаемые библиотеки"<<"\r"<<std::endl;
+ ofile<<"//****************************************************************************************************"<<"\r"<<std::endl;
+ ofile<<"#include <stdio.h>"<<"\r"<<std::endl;
+ ofile<<"#include <math.h>"<<"\r"<<std::endl;
+ ofile<<""<<"\r"<<std::endl;
 
- ofile<<"//****************************************************************************************************"<<std::endl;
- ofile<<"//константы"<<std::endl;
- ofile<<"//****************************************************************************************************"<<std::endl;
+ ofile<<"//****************************************************************************************************"<<"\r"<<std::endl;
+ ofile<<"//константы"<<"\r"<<std::endl;
+ ofile<<"//****************************************************************************************************"<<"\r"<<std::endl;
 
  for(size_t n=0;n<layers-1;n++)
  {
   size_t row=cMatrix_W[n].GetSizeY();
   size_t col=cMatrix_W[n].GetSizeX();
-  ofile<<"//Матрица весов связей слоя "<<n<<" со слоем "<<(n+1)<<std::endl;
-  ofile<<"static const float MatrixW"<<n<<"["<<row<<"*"<<col<<"]="<<std::endl;
-  ofile<<"{"<<std::endl;
+  ofile<<"//Матрица весов связей слоя "<<n<<" со слоем "<<(n+1)<<"\r"<<std::endl;
+  ofile<<"static const float MatrixW"<<n<<"["<<row<<"*"<<col<<"]="<<"\r"<<std::endl;
+  ofile<<"{"<<"\r"<<std::endl;
   for(size_t r=0;r<row;r++)
   {
    ofile<<" ";
@@ -268,127 +315,167 @@ bool CNeuroNet::Export(const std::string &file_name)
 	ofile<<cMatrix_W[n].GetElement(r,c);
 	if (r!=row-1 || c!=col-1) ofile<<",";
    }   
-   ofile<<std::endl;
+   ofile<<"\r"<<std::endl;
   }
-  ofile<<"};"<<std::endl;
+  ofile<<"};"<<"\r"<<std::endl;
 
-  ofile<<"//Вектор сдвигов связей слоя "<<n<<" со слоем "<<(n+1)<<std::endl;
+  ofile<<"//Вектор сдвигов связей слоя "<<n<<" со слоем "<<(n+1)<<"\r"<<std::endl;
   row=cVector_B[n].GetSize();
-  ofile<<"static const float VectorB"<<n<<"["<<row<<"]="<<std::endl;
-  ofile<<"{"<<std::endl;
+  ofile<<"static const float VectorB"<<n<<"["<<row<<"]="<<"\r"<<std::endl;
+  ofile<<"{"<<"\r"<<std::endl;
   for(size_t r=0;r<row;r++)
   {
    ofile<<" "<<cVector_B[n].GetElement(r);
    if (r!=row-1) ofile<<",";
-   ofile<<std::endl;
+   ofile<<"\r"<<std::endl;
   }
-  ofile<<"};"<<std::endl;
-  ofile<<"//----------------------------------------------------------------------------------------------------"<<std::endl;
+  ofile<<"};"<<"\r"<<std::endl;
+  ofile<<"//----------------------------------------------------------------------------------------------------"<<"\r"<<std::endl;
  }
 
- ofile<<"//Количество нейронов в слоях"<<std::endl;
- ofile<<"static const size_t NeuronInLayer["<<layers<<"]="<<std::endl;
- ofile<<"{"<<std::endl;
+ ofile<<"//Количество нейронов в слоях"<<"\r"<<std::endl;
+ ofile<<"static const size_t NeuronInLayer["<<layers<<"]="<<"\r"<<std::endl;
+ ofile<<"{"<<"\r"<<std::endl;
  for(size_t n=0;n<layers;n++)
  {
   ofile<<" "<<NeuronInLayers[n];
   if (n!=layers-1) ofile<<",";
-  ofile<<std::endl;
+  ofile<<"\r"<<std::endl;
  }
- ofile<<"};"<<std::endl;
- ofile<<"//Массив указателей на матрицы связей"<<std::endl;
- ofile<<"static const float *MatrixWPtr["<<(layers-1)<<"]="<<std::endl;
- ofile<<"{"<<std::endl;
+ ofile<<"};"<<"\r"<<std::endl;
+ ofile<<"//Массив указателей на матрицы связей"<<"\r"<<std::endl;
+ ofile<<"static const float *MatrixWPtr["<<(layers-1)<<"]="<<"\r"<<std::endl;
+ ofile<<"{"<<"\r"<<std::endl;
  for(size_t n=0;n<layers-1;n++)
  {
   ofile<<" MatrixW"<<n;
   if (n!=layers-2) ofile<<",";
-  ofile<<std::endl;
+  ofile<<"\r"<<std::endl;
  }
- ofile<<"};"<<std::endl;
+ ofile<<"};"<<"\r"<<std::endl;
 
- ofile<<"//Массив указателей на вектора сдвигов"<<std::endl;
- ofile<<"static const float *VectorBPtr["<<(layers-1)<<"]="<<std::endl;
- ofile<<"{"<<std::endl;
+ ofile<<"//Массив указателей на вектора сдвигов"<<"\r"<<std::endl;
+ ofile<<"static const float *VectorBPtr["<<(layers-1)<<"]="<<"\r"<<std::endl;
+ ofile<<"{"<<"\r"<<std::endl;
  for(size_t n=0;n<layers-1;n++)
  {
   ofile<<" VectorB"<<n;
   if (n!=layers-2) ofile<<",";
-  ofile<<std::endl;
+  ofile<<"\r"<<std::endl;
  }
- ofile<<"};"<<std::endl;
+ ofile<<"};"<<"\r"<<std::endl;
 
- ofile<<""<<std::endl;
- ofile<<"//****************************************************************************************************"<<std::endl;
- ofile<<"//глобальные переменные"<<std::endl;
- ofile<<"//****************************************************************************************************"<<std::endl;
+ ofile<<""<<"\r"<<std::endl;
+ ofile<<"//****************************************************************************************************"<<"\r"<<std::endl;
+ ofile<<"//глобальные переменные"<<"\r"<<std::endl;
+ ofile<<"//****************************************************************************************************"<<"\r"<<std::endl;
 
  for(size_t n=0;n<layers;n++)
  {
-  ofile<<"//Вектор состояния нейронов для слоя "<<n<<std::endl;
+  ofile<<"//Вектор состояния нейронов для слоя "<<n<<"\r"<<std::endl;
   size_t row=cVector_H[n].GetSize();
-  ofile<<"static float VectorH"<<n<<"["<<row<<"];"<<std::endl;
+  ofile<<"static float VectorH"<<n<<"["<<row<<"];"<<"\r"<<std::endl;
  }
- ofile<<"//Массив указателей на вектора состояний"<<std::endl;
+ ofile<<"//Массив указателей на вектора состояний"<<"\r"<<std::endl;
 
- ofile<<"static float * const VectorHPtr["<<layers<<"]="<<std::endl;
- ofile<<"{"<<std::endl;
+ ofile<<"static float * const VectorHPtr["<<layers<<"]="<<"\r"<<std::endl;
+ ofile<<"{"<<"\r"<<std::endl;
  for(size_t n=0;n<layers;n++)
  {
   ofile<<" VectorH"<<n;
   if (n!=layers-1) ofile<<",";
-  ofile<<std::endl;
+  ofile<<"\r"<<std::endl;
  }
- ofile<<"};"<<std::endl;
+ ofile<<"};"<<"\r"<<std::endl;
  
  //функция активации
- ofile<<std::endl;
- ofile<<"//****************************************************************************************************"<<std::endl;
- ofile<<"//функции"<<std::endl;
- ofile<<"//****************************************************************************************************"<<std::endl;
+ ofile<<"\r"<<std::endl;
+ ofile<<"//****************************************************************************************************"<<"\r"<<std::endl;
+ ofile<<"//функции"<<"\r"<<std::endl;
+ ofile<<"//****************************************************************************************************"<<"\r"<<std::endl;
 
- ofile<<"//----------------------------------------------------------------------------------------------------"<<std::endl;
- ofile<<"//функция активации нейрона"<<std::endl;
- ofile<<"//----------------------------------------------------------------------------------------------------"<<std::endl;
+ ofile<<"//----------------------------------------------------------------------------------------------------"<<"\r"<<std::endl;
+ ofile<<"//функция активации нейрона"<<"\r"<<std::endl;
+ ofile<<"//----------------------------------------------------------------------------------------------------"<<"\r"<<std::endl;
 
- ofile<<"static float NeuronFunction(float value)"<<std::endl;
- ofile<<"{"<<std::endl;
- ofile<<" return(1.0f/(1.0f+(float)(exp(-value))));"<<std::endl;
- ofile<<"}"<<std::endl;
- ofile<<""<<std::endl;
+ ofile<<"static float NeuronFunction(float value)"<<"\r"<<std::endl;
+ ofile<<"{"<<"\r"<<std::endl;
+ ofile<<" return(1.0f/(1.0f+(float)(exp(-value))));"<<"\r"<<std::endl;
+ ofile<<"}"<<"\r"<<std::endl;
+ ofile<<""<<"\r"<<std::endl;
 
- ofile<<"//----------------------------------------------------------------------------------------------------"<<std::endl;
- ofile<<"//функция расчёта нейросети"<<std::endl;
- ofile<<"//----------------------------------------------------------------------------------------------------"<<std::endl;
+ ofile<<"//----------------------------------------------------------------------------------------------------"<<"\r"<<std::endl;
+ ofile<<"//функция расчёта нейросети"<<"\r"<<std::endl;
+ ofile<<"//----------------------------------------------------------------------------------------------------"<<"\r"<<std::endl;
 
- ofile<<"void CreateAnswer(void)"<<std::endl;
- ofile<<"{"<<std::endl;
- ofile<<" for(size_t n=0;n<"<<(layers-1)<<";n++)"<<std::endl;
- ofile<<" {"<<std::endl;
- ofile<<"  float *vector_h_current=VectorHPtr[n];"<<std::endl;
- ofile<<"  float *vector_h_next=VectorHPtr[n+1];"<<std::endl;
- ofile<<"  const float *vector_b_current=VectorBPtr[n];"<<std::endl;
- ofile<<"  const float *matrix_w_current=MatrixWPtr[n];"<<std::endl;
- ofile<<""<<std::endl;
- ofile<<"  size_t mx=NeuronInLayer[n];//размер матрицы по x"<<std::endl;
- ofile<<"  size_t my=NeuronInLayer[n+1];//размер матрицы по y"<<std::endl;
- ofile<<""<<std::endl;
- ofile<<"  //умножается строка матрицы на столбец вектора, добавляется вектор смещения и применяется функция активации нейрона"<<std::endl;
- ofile<<"  for(size_t y=0;y<my;y++)"<<std::endl;
- ofile<<"  {"<<std::endl;
- ofile<<"   float value=0;"<<std::endl;
- ofile<<"   for(size_t x=0;x<mx;x++)"<<std::endl;
- ofile<<"   {"<<std::endl;
- ofile<<"    float m_value=matrix_w_current[mx*y+x];"<<std::endl;
- ofile<<"    float v_value=vector_h_current[x];"<<std::endl;
- ofile<<"    value+=m_value*v_value;"<<std::endl;
- ofile<<"   }"<<std::endl;
- ofile<<"   vector_h_next[y]=NeuronFunction(value+vector_b_current[y]);"<<std::endl;
- ofile<<"  }"<<std::endl;
- ofile<<" }"<<std::endl;
- ofile<<"}"<<std::endl;
-
-
+ ofile<<"void CreateAnswer(void)"<<"\r"<<std::endl;
+ ofile<<"{"<<"\r"<<std::endl;
+ ofile<<" for(size_t n=0;n<"<<(layers-1)<<";n++)"<<"\r"<<std::endl;
+ ofile<<" {"<<"\r"<<std::endl;
+ ofile<<"  float *vector_h_current=VectorHPtr[n];"<<"\r"<<std::endl;
+ ofile<<"  float *vector_h_next=VectorHPtr[n+1];"<<"\r"<<std::endl;
+ ofile<<"  const float *vector_b_current=VectorBPtr[n];"<<"\r"<<std::endl;
+ ofile<<"  const float *matrix_w_current=MatrixWPtr[n];"<<"\r"<<std::endl;
+ ofile<<""<<"\r"<<std::endl;
+ ofile<<"  size_t mx=NeuronInLayer[n];//размер матрицы по x"<<"\r"<<std::endl;
+ ofile<<"  size_t my=NeuronInLayer[n+1];//размер матрицы по y"<<"\r"<<std::endl;
+ ofile<<""<<"\r"<<std::endl;
+ ofile<<"  //умножается строка матрицы на столбец вектора, добавляется вектор смещения и применяется функция активации нейрона"<<"\r"<<std::endl;
+ ofile<<"  for(size_t y=0;y<my;y++)"<<"\r"<<std::endl;
+ ofile<<"  {"<<"\r"<<std::endl;
+ ofile<<"   float value=0;"<<"\r"<<std::endl;
+ ofile<<"   for(size_t x=0;x<mx;x++)"<<"\r"<<std::endl;
+ ofile<<"   {"<<"\r"<<std::endl;
+ ofile<<"    float m_value=matrix_w_current[mx*y+x];"<<"\r"<<std::endl;
+ ofile<<"    float v_value=vector_h_current[x];"<<"\r"<<std::endl;
+ ofile<<"    value+=m_value*v_value;"<<"\r"<<std::endl;
+ ofile<<"   }"<<"\r"<<std::endl;
+ ofile<<"   vector_h_next[y]=NeuronFunction(value+vector_b_current[y]);"<<"\r"<<std::endl;
+ ofile<<"  }"<<"\r"<<std::endl;
+ ofile<<" }"<<"\r"<<std::endl;
+ ofile<<"}"<<"\r"<<std::endl;
+ 
  ofile.close();
+ return(true);
+}
+//----------------------------------------------------------------------------------------------------
+//сохранить нейросеть
+//----------------------------------------------------------------------------------------------------
+bool CNeuroNet::Save(IDataStream *iDataStream_Ptr)
+{
+ //сохраняем количество нейронов в слоях
+ uint32_t layers=NeuronInLayers.size();
+ iDataStream_Ptr->SaveUInt32(layers);
+ for(uint32_t n=0;n<layers;n++) iDataStream_Ptr->SaveUInt32(NeuronInLayers[n]);
+ //сохраняем веса и смещения нейронов
+ uint32_t size;
+ size=cMatrix_W.size();
+ iDataStream_Ptr->SaveUInt32(size);
+ for(uint32_t n=0;n<size;n++) cMatrix_W[n].Save(iDataStream_Ptr);
+
+ size=cVector_B.size();
+ iDataStream_Ptr->SaveUInt32(size);
+ for(uint32_t n=0;n<size;n++) cVector_B[n].Save(iDataStream_Ptr);
+ return(true);
+}
+//----------------------------------------------------------------------------------------------------
+//загрузить нейросеть
+//----------------------------------------------------------------------------------------------------
+bool CNeuroNet::Load(IDataStream *iDataStream_Ptr)
+{
+ //загружаем количество нейронов в слоях
+ uint32_t layers=iDataStream_Ptr->LoadUInt32();
+ std::vector<size_t> neuron_in_layers(layers);
+ for(uint32_t n=0;n<layers;n++)  neuron_in_layers[n]=iDataStream_Ptr->LoadUInt32();  
+ //инициализируем нейросеть
+ Create(neuron_in_layers);
+ 
+ //загружаем веса и смещения нейронов
+ uint32_t size;
+ size=iDataStream_Ptr->LoadUInt32();
+ for(uint32_t n=0;n<size;n++) cMatrix_W[n].Load(iDataStream_Ptr);
+
+ size=iDataStream_Ptr->LoadUInt32();
+ for(uint32_t n=0;n<size;n++) cVector_B[n].Load(iDataStream_Ptr);
  return(true);
 }
