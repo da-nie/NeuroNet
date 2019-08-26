@@ -2,6 +2,7 @@
 #include <stdio.h>
  
 #include "cneuronet.h"
+#include "cneuronettrainer.h"
 #include "idatastream.h"
 
 /*
@@ -15,13 +16,16 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevstance,LPSTR lpstrCmdLine,
 {
  try
  {
-  CNeuroNet cNeuroNet;
+  std::shared_ptr<CNeuroNet> cNeuroNet_Ptr(new CNeuroNet);
+  std::unique_ptr<CNeuroNetTrainer> cNeuroNetTrainer_Ptr(new CNeuroNetTrainer);
   std::vector<size_t> neuron_in_layers(3);
   neuron_in_layers[0]=10;//входной слой
   neuron_in_layers[1]=5;
   neuron_in_layers[2]=10;//выходной слой
   //создаём нейросеть
-  cNeuroNet.Create(neuron_in_layers);
+  cNeuroNet_Ptr->Create(neuron_in_layers);
+  //подключаем класс для тренировки нейросети
+  cNeuroNetTrainer_Ptr->Connect(cNeuroNet_Ptr);
   //создаём образы для обучения
   std::vector<std::pair<CVector,CVector>> image(2);
   size_t i=0;
@@ -77,11 +81,12 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevstance,LPSTR lpstrCmdLine,
   image[i].second.SetElement(8,0.8);
   image[i].second.SetElement(9,0.9);
   //обучаем нейросеть
-  cNeuroNet.Reset();
+  cNeuroNet_Ptr->Reset();
+
   const double speed=0.25;//скорость обучения
   const double max_cost=0.001;//ошибка обучения для всех образов (сумма квадратов ошибки)
   const size_t max_iteration=100000;//максимальное количество итераций обучения
-  double cost=cNeuroNet.Training(image,speed,max_cost,max_iteration);
+  double cost=cNeuroNetTrainer_Ptr->Training(image,speed,max_cost,max_iteration);
 
   char str[255];
   sprintf(str,"Достигнута точность обучения:%f",cost);
@@ -102,7 +107,7 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevstance,LPSTR lpstrCmdLine,
 
   CVector cVector_Output(10);
 
-  cNeuroNet.GetAnswer(cVector_Input,cVector_Output);
+  cNeuroNet_Ptr->GetAnswer(cVector_Input,cVector_Output);
 
   std::string out;
   //выведем результат
@@ -114,10 +119,10 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevstance,LPSTR lpstrCmdLine,
   }
   MessageBox(NULL,out.c_str(),"Результат",MB_OK);
 
-  cNeuroNet.Export("net.txt");
+  cNeuroNet_Ptr->Export("net.txt");
   //сохраним нейросеть
   std::unique_ptr<IDataStream> iDataStream_Ptr(IDataStream::CreateNewDataStreamFile("neuronet.net",true));
-  cNeuroNet.Save(iDataStream_Ptr.get());
+  cNeuroNet_Ptr->Save(iDataStream_Ptr.get());
  }
  catch(const char *text)
  {

@@ -90,19 +90,6 @@ class CVector
   bool Load(IDataStream *iDataStream_Ptr);//загрузить вектор
 
   static bool Test(void);//протестировать класс векторов
-
-  void Save(FILE *file)
-  {
-   fwrite(&Size,sizeof(size_t),1,file);
-   for(size_t n=0;n<Size;n++) fwrite(&Item[n],sizeof(double),1,file);
-  }
-
-  void Load(FILE *file)
-  {
-   fread(&Size,sizeof(size_t),1,file);
-   for(size_t n=0;n<Size;n++) fread(&Item[n],sizeof(double),1,file);
-  }
-
  private:
   //-закрытые функции-----------------------------------------------------------------------------------  
 };

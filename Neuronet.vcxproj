@@ -77,6 +77,7 @@
     <ClCompile Include="cdatastreamfile.cpp" />
     <ClCompile Include="cmatrix.cpp" />
     <ClCompile Include="cneuronet.cpp" />
+    <ClCompile Include="cneuronettrainer.cpp" />
     <ClCompile Include="cvector.cpp" />
     <ClCompile Include="idatastream.cpp" />
     <ClCompile Include="main.cpp" />
@@ -85,6 +86,7 @@
     <ClInclude Include="cdatastreamfile.h" />
     <ClInclude Include="cmatrix.h" />
     <ClInclude Include="cneuronet.h" />
+    <ClInclude Include="cneuronettrainer.h" />
     <ClInclude Include="cvector.h" />
     <ClInclude Include="idatastream.h" />
   </ItemGroup>

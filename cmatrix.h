@@ -101,20 +101,6 @@ class CMatrix
   bool Save(IDataStream *iDataStream_Ptr);//сохранить матрицу
   bool Load(IDataStream *iDataStream_Ptr);//загрузить матрицу
 
-  void Save(FILE *file)
-  {
-   fwrite(&Size_X,sizeof(size_t),1,file);
-   fwrite(&Size_Y,sizeof(size_t),1,file);
-   for(size_t n=0;n<Size_X*Size_Y;n++) fwrite(&Item[n],sizeof(double),1,file);
-  }
-  void Load(FILE *file)
-  {
-   fread(&Size_X,sizeof(size_t),1,file);
-   fread(&Size_Y,sizeof(size_t),1,file);
-   for(size_t n=0;n<Size_X*Size_Y;n++) fread(&Item[n],sizeof(double),1,file);
-  }
-
-
   static bool Test(void);//проестировать класс матриц
 
  private:
