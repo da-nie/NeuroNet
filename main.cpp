@@ -107,7 +107,9 @@ int WINAPI WinMain(HINSTANCE hInstance,HINSTANCE hPrevstance,LPSTR lpstrCmdLine,
 
   CVector cVector_Output(10);
 
-  cNeuroNet_Ptr->GetAnswer(cVector_Input,cVector_Output);
+  cNeuroNet_Ptr->SetInput(cVector_Input);
+  cNeuroNet_Ptr->Forward();
+  cNeuroNet_Ptr->GetOutput(cVector_Output);
 
   std::string out;
   //выведем результат

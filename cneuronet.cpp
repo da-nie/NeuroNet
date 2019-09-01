@@ -58,27 +58,6 @@ double CNeuroNet::NeuronFunctionDifferencial(double value)
 {
  return((1.0-NeuronFunction(value))*NeuronFunction(value));
 }
-//----------------------------------------------------------------------------------------------------
-//выполнить прямой проход по сети
-//----------------------------------------------------------------------------------------------------
-void CNeuroNet::Forward(void)
-{
- size_t layers=NeuronInLayers.size();
- if (layers<2) return;
- //вычисляем сеть
- for(size_t n=0;n<layers-1;n++)
-{ 
-  CMatrix::Mul(cVector_TmpZ[n],cMatrix_W[n],cVector_H[n]);
-  CVector::Add(cVector_Z[n+1],cVector_TmpZ[n],cVector_B[n]);
-  //cVector_Z[n+1].Move(cMatrix_W[n]*cVector_H[n]+cVector_B[n]);
-  //применим функцию активации
-  for(size_t y=0;y<cVector_Z[n+1].GetSize();y++)
-  {
-   double v=cVector_Z[n+1].GetElement(y);
-   cVector_H[n+1].SetElement(y,NeuronFunction(v));
-  }
- }
-}
 
 //****************************************************************************************************
 //открытые функции
@@ -141,15 +120,75 @@ void CNeuroNet::Reset(void)
  }
 }
 //----------------------------------------------------------------------------------------------------
-//вычислить результат работы нейросети
+//задать вход нейросети без задания значения до активации нейрона
 //----------------------------------------------------------------------------------------------------
-void CNeuroNet::GetAnswer(const CVector &input,CVector &output)
+void CNeuroNet::SetInput(const CVector &input_h)
 {
  size_t layers=NeuronInLayers.size();
  if (layers<2) return;
- cVector_H[0]=input;//входной вектор
- Forward();
- output=cVector_H[layers-1];
+
+ if ( cVector_H[0].GetSize()!=input_h.GetSize()) throw("Ошибка11");
+
+ cVector_H[0]=input_h;//входной вектор после функции активации нейрона
+ cVector_Z[0].Zero();//входной вектор до функции активации нейрона
+}
+//----------------------------------------------------------------------------------------------------
+//задать вход нейросети с заданием значения до активации нейрона
+//----------------------------------------------------------------------------------------------------
+void CNeuroNet::SetInput(const CVector &input_h,const CVector &input_z)
+{
+ if ( cVector_H[0].GetSize()!=input_h.GetSize()) throw("Ошибка размерности векторов в CNeuroNet::SetInput");
+ if ( cVector_Z[0].GetSize()!=input_z.GetSize()) throw("Ошибка размерности векторов в CNeuroNet::SetInput");
+
+ size_t layers=NeuronInLayers.size();
+ if (layers<2) return;
+ cVector_H[0]=input_h;//входной вектор после функции активации нейрона
+ cVector_Z[0]=input_z;//входной вектор до функции активации нейрона
+}
+
+//----------------------------------------------------------------------------------------------------
+//выполнить прямой проход по сети
+//----------------------------------------------------------------------------------------------------
+void CNeuroNet::Forward(void)
+{
+ size_t layers=NeuronInLayers.size();
+ if (layers<2) return;
+ //вычисляем сеть
+ for(size_t n=0;n<layers-1;n++)
+{ 
+  CMatrix::Mul(cVector_TmpZ[n],cMatrix_W[n],cVector_H[n]);
+  CVector::Add(cVector_Z[n+1],cVector_TmpZ[n],cVector_B[n]);
+  //cVector_Z[n+1].Move(cMatrix_W[n]*cVector_H[n]+cVector_B[n]);
+  //применим функцию активации
+  for(size_t y=0;y<cVector_Z[n+1].GetSize();y++)
+  {
+   double v=cVector_Z[n+1].GetElement(y);
+   cVector_H[n+1].SetElement(y,NeuronFunction(v));
+  }
+ }
+}
+//----------------------------------------------------------------------------------------------------
+//получить выход нейросети
+//----------------------------------------------------------------------------------------------------
+void CNeuroNet::GetOutput(CVector &output_h)
+{
+ size_t layers=NeuronInLayers.size();
+ if (layers<2) return;
+ if (cVector_H[layers-1].GetSize()!=output_h.GetSize()) throw("Ошибка размерности векторов в CNeuroNet::GetOutput");
+ output_h=cVector_H[layers-1];
+}
+//----------------------------------------------------------------------------------------------------
+//получить выход нейросети
+//----------------------------------------------------------------------------------------------------
+void CNeuroNet::GetOutput(CVector &output_h,CVector &output_z)
+{
+ size_t layers=NeuronInLayers.size();
+ if (layers<2) return;
+ if (cVector_H[layers-1].GetSize()!=output_h.GetSize()) throw("Ошибка размерности векторов в CNeuroNet::GetOutput");
+ if (cVector_Z[layers-1].GetSize()!=output_z.GetSize()) throw("Ошибка размерности векторов в CNeuroNet::GetOutput");
+
+ output_h=cVector_H[layers-1];
+ output_z=cVector_Z[layers-1];
 }
 //----------------------------------------------------------------------------------------------------
 //экспортировать нейросеть
@@ -312,6 +351,33 @@ bool CNeuroNet::Export(const std::string &file_name)
  ofile.close();
  return(true);
 }
+
+//----------------------------------------------------------------------------------------------------
+//получить размер входного вектора
+//----------------------------------------------------------------------------------------------------
+size_t CNeuroNet::GetInputSize(void)
+{
+ size_t layers=NeuronInLayers.size();
+ if (layers<2) return(0);
+ return(NeuronInLayers[0]); 
+}
+//----------------------------------------------------------------------------------------------------
+//получить размер выходного вектора
+//----------------------------------------------------------------------------------------------------
+size_t CNeuroNet::GetOutputSize(void)
+{
+ size_t layers=NeuronInLayers.size();
+ if (layers<2) return(0);
+ return(NeuronInLayers[layers-1]); 
+}
+//----------------------------------------------------------------------------------------------------
+//получить количество слоёв
+//----------------------------------------------------------------------------------------------------
+size_t CNeuroNet::GetLayerAmount(void)
+{
+ return(NeuronInLayers.size());
+}
+
 //----------------------------------------------------------------------------------------------------
 //сохранить нейросеть
 //----------------------------------------------------------------------------------------------------

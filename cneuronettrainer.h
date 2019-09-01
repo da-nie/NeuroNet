@@ -32,11 +32,13 @@
 //****************************************************************************************************
 class CNeuroNetTrainer
 {
+ friend class CConvolutionalNeuroNetTrainer;
+ friend class CConvolutionalKernelTrainer;
  public:
   //-перечисления---------------------------------------------------------------------------------------
   //-структуры------------------------------------------------------------------------------------------
   //-константы------------------------------------------------------------------------------------------
- private:
+ protected:
   //-переменные-----------------------------------------------------------------------------------------
   std::shared_ptr<CNeuroNet> cNeuroNet_Ptr;//указатель на класс обучаемой нейросети
 
@@ -58,9 +60,15 @@ class CNeuroNetTrainer
  public:
   //-открытые функции-----------------------------------------------------------------------------------
   void Connect(std::shared_ptr<CNeuroNet> cNeuroNet_Ptr_Set);//подключиться к нейросети
-  double Training(const std::vector<std::pair<CVector,CVector>> &image,double speed,double max_cost,size_t max_iteration);//обучить нейросеть
- private:
+  virtual double Training(const std::vector<std::pair<CVector,CVector>> &image,double speed,double max_cost,size_t max_iteration);//обучить нейросеть
+ protected:
   //-закрытые функции-----------------------------------------------------------------------------------  
+  void InitDeltaWeighAndBias(void);//инициализация поправок к весам и смещениям
+  void CreateOutputLayerDeltaAndCost(const CVector &cVector_Output,double &cost);//посчитать дельту последнего слоя и функцию стоимости
+  void SetOutputDelta(const CVector &cVector_Delta_Set);//задать дельту последнего слоя
+  void OneStep(void);//выполнить один проход обучения
+  void CreateDeltaInputLayer(void);//вычислить дельту входного слоя
+  void UpdateWeightAndBias(double k);//обновить веса и смещения
 };
 
 #endif

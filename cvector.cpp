@@ -205,7 +205,11 @@ double CVector::GetNorma(void) const
  
 double CVector::GetElement(size_t index) const
 {
- if (index>=Size) return(0);
+ if (index>=Size)
+ {
+  throw("Ошибка доступа к элементу вектора для чтения!");
+  return(0);
+ }
  return(Item[index]);
 }
 //----------------------------------------------------------------------------------------------------
@@ -214,7 +218,11 @@ double CVector::GetElement(size_t index) const
  
 void CVector::SetElement(size_t index,double value)
 {
- if (index>=Size) return;
+ if (index>=Size)
+ {
+  throw("Ошибка доступа к элементу вектора для записи!");
+  return;
+ }
  Item[index]=value;
 }
 //----------------------------------------------------------------------------------------------------
@@ -280,7 +288,6 @@ void CVector::Move(CVector &cVector)
 //----------------------------------------------------------------------------------------------------
 //оператор "="
 //----------------------------------------------------------------------------------------------------
- 
 CVector& CVector::operator=(const CVector &cVector)
 {
  if (this!=&cVector)

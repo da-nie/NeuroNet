@@ -28,6 +28,8 @@
 //предварительные объявления
 //****************************************************************************************************
 class CNeuroNetTrainer;
+class CConvolutionalNeuroNetTrainer;
+class CConvolutionalKernelTrainer;
 
 //****************************************************************************************************
 //Класс нейросети
@@ -35,12 +37,14 @@ class CNeuroNetTrainer;
 class CNeuroNet
 {
  friend class CNeuroNetTrainer;
-
+ friend class CConvolutionalNeuroNetTrainer;
+ friend class CConvolutionalKernelTrainer;
  public:
   //-перечисления---------------------------------------------------------------------------------------
   //-структуры------------------------------------------------------------------------------------------
   //-константы------------------------------------------------------------------------------------------
  private:
+public:
   //-переменные-----------------------------------------------------------------------------------------	 
   std::vector<size_t> NeuronInLayers;//количество нейронов в слоях
   std::vector<CMatrix> cMatrix_W;//веса
@@ -59,8 +63,18 @@ class CNeuroNet
   //-открытые функции-----------------------------------------------------------------------------------
   void Create(const std::vector<size_t> &neuron_in_layers);//создать нейросеть
   void Reset(void);//привести нейросеть в исходное состояние
-  void GetAnswer(const CVector &input,CVector &output);//вычислить результат работы нейросети
+  void SetInput(const CVector &input_h);//задать вход нейросети без задания значения до активации нейрона
+  void SetInput(const CVector &input_h,const CVector &input_z);//задать вход нейросети с заданием значения до активации нейрона
+  void Forward(void);//выполнить прямой проход по сети
+  void GetOutput(CVector &output_h);//получить выход нейросети
+  void GetOutput(CVector &output_h,CVector &output_z);//получить выход нейросети
+
   bool Export(const std::string &file_name);//экспортировать нейросеть
+
+  size_t GetInputSize(void);//получить размер входного вектора
+  size_t GetOutputSize(void);//получить размер выходного вектора
+  size_t GetLayerAmount(void);//получить количество слоёв
+
 
   bool Save(IDataStream *iDataStream_Ptr);//сохранить нейросеть
   bool Load(IDataStream *iDataStream_Ptr);//загрузить нейросеть
@@ -70,8 +84,6 @@ class CNeuroNet
   double GetRandValue(double max_value);//случайное число
   double NeuronFunction(double value);//функция активации нейрона
   double NeuronFunctionDifferencial(double value);//производная функции активации нейрона
-  void Forward(void);//выполнить прямой проход по сети
-
 };
 
 #endif
